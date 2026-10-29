@@ -1,0 +1,64 @@
+# GitHub Action that will automatically:
+# - Build and push the controller image
+# - Package the Helm chart for deploying the controller image to a K8s cluster
+
+name: Push Controller Image and Helm Chart
+
+on:
+  push:
+    branches:
+    - main
+    paths:
+    - 'charts/**'
+
+  pull_request_target:
+    branches:
+    - main
+    paths:
+    - 'charts/**'
+    types:
+    - closed
+
+  workflow_dispatch:
+
+jobs:
+  package-charts:
+    runs-on: ubuntu-26.04
+    env:
+      BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+      REGISTRY: ghcr.io
+    permissions:
+      contents: write
+      packages: write
+    steps:
+    - name: Install Helm
+      id: install-helm
+      uses: azure/setup-helm@v5
+
+    - name: Git Checkout Branch
+      uses: actions/checkout@v7
+      with:
+        ref: ${{ env.BRANCH_NAME }}
+
+    - name: Extract and Set Relevant Controller Configuration from Helm Chart
+      run: |
+        set -ex
+        echo "CHART_NAME=$(helm show chart .deploy/chart | yq -r '.name' | tr '[:upper:]' '[:lower:]')" >> ${GITHUB_ENV}
+        echo "CHART_VERSION=$(helm show chart .deploy/chart | yq -r '.version')" >> ${GITHUB_ENV}
+
+    - name: Build and Push Controller Image
+      id: build-and-push
+      run: |
+        echo "${{ secrets.GITHUB_TOKEN }}" | podman login ${REGISTRY} -u ${GITHUB_ACTOR} --password-stdin
+        podman build -t ${REGISTRY}/${GITHUB_REPOSITORY_OWNER}/${CHART_NAME}:${CHART_VERSION} -f Containerfile
+        podman push ${REGISTRY}/${GITHUB_REPOSITORY_OWNER}/${CHART_NAME}:${CHART_VERSION}
+
+    - name: Package and Push Helm Chart to GitHub OCI Registry
+      run: |
+        set -ex
+        echo ${{secrets.GITHUB_TOKEN}} | helm registry login -u ${GITHUB_ACTOR} --password-stdin ghcr.io
+
+        cd .deploy/chart
+        helm package --dependency-update .
+
+        helm push ${CHART_NAME}-${CHART_VERSION}.tgz oci://${REGISTRY}/${GITHUB_REPOSITORY}/

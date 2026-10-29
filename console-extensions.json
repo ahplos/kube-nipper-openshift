@@ -1,0 +1,41 @@
+[
+  {
+    "type": "console.navigation/resource-ns",
+    "properties": {
+      "id": "resource-nips",
+      "section": "observe",
+      "name": "Resource Nips",
+      "model": {
+          "group": "nipper.ahplos.org",
+          "version": "v1beta1",
+          "kind": "ResourceNip"
+      }
+    }
+  },
+  {
+    "type": "console.page/resource/list",
+    "properties": {
+      "model": {
+          "group": "nipper.ahplos.org",
+          "version": "v1beta1",
+          "kind": "ResourceNip"
+      },
+      "component": { "$codeRef": "nipUiComponents.NipListPage" }
+    }
+  },
+  {
+    "type": "console.tab/horizontalNav",
+    "properties": {
+      "page": {
+        "name": "Events",
+        "href": "tps-events"
+      },
+      "model": {
+        "group": "nipper.ahplos.org",
+        "version": "v1beta1",
+        "kind": "ResourceNip"
+      },
+      "component": { "$codeRef": "nipUiComponents.NipEventsListTab" }
+    }
+  }
+]
