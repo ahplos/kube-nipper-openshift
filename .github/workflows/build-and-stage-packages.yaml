@@ -2,7 +2,7 @@
 # - Build and push the controller image
 # - Package the Helm chart for deploying the controller image to a K8s cluster
 
-name: Push Controller Image and Helm Chart
+name: Push Plugin Image and Helm Chart
 
 on:
   push:
