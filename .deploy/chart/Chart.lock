@@ -1,0 +1,9 @@
+dependencies:
+- name: gnoma
+  repository: oci://ghcr.io/ahplos
+  version: 0.1.0
+- name: kube-nipper-controller
+  repository: oci://ghcr.io/ahplos/kube-nipper
+  version: 0.1.0
+digest: sha256:f5e80ede42fe9e0891574442ae07300b9d37cbaa5098da5427c842d72a4b6c1d
+generated: "2026-10-28T16:27:16.327130599-05:00"

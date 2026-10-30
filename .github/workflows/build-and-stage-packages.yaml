@@ -31,6 +31,11 @@ jobs:
       contents: write
       packages: write
     steps:
+    - name: Git Checkout Branch
+      uses: actions/checkout@v7
+      with:
+        ref: ${{ env.BRANCH_NAME }}
+
     - name: Install Helm
       id: install-helm
       uses: azure/setup-helm@v5
@@ -41,11 +46,6 @@ jobs:
         node-version: '24'
         # Cache dependencies based on your lockfile
         cache: 'yarn'
-
-    - name: Git Checkout Branch
-      uses: actions/checkout@v7
-      with:
-        ref: ${{ env.BRANCH_NAME }}
 
     - name: Extract and Set Relevant Controller Configuration from Helm Chart
       run: |
