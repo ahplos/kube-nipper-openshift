@@ -1,6 +1,6 @@
 # GitHub Action that will automatically:
-# - Build and push the controller image
-# - Package the Helm chart for deploying the controller image to a K8s cluster
+# - Build and push the console plugin image
+# - Package the Helm chart for deploying the console plugin image to a K8s cluster
 
 name: Push Console Plugin Image and Helm Chart
 
@@ -35,6 +35,19 @@ jobs:
       id: install-helm
       uses: azure/setup-helm@v5
 
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        # Cache dependencies based on your lockfile
+        cache: 'yarn'
+
+    - name: Enable Corepack
+      run: corepack enable
+
+    - name: Install dependencies
+      run: yarn install --immutable
+
     - name: Git Checkout Branch
       uses: actions/checkout@v7
       with:
@@ -50,8 +63,7 @@ jobs:
       id: build-and-push
       run: |
         echo "${{ secrets.GITHUB_TOKEN }}" | podman login ${REGISTRY} -u ${GITHUB_ACTOR} --password-stdin
-        podman build -t ${REGISTRY}/${GITHUB_REPOSITORY_OWNER}/${CHART_NAME}:${CHART_VERSION} -f Containerfile
-        podman push ${REGISTRY}/${GITHUB_REPOSITORY_OWNER}/${CHART_NAME}:${CHART_VERSION}
+        yarn build-all ${REGISTRY}/${GITHUB_REPOSITORY_OWNER}/${CHART_NAME}:${CHART_VERSION} Containerfile
 
     - name: Package and Push Helm Chart to GitHub OCI Registry
       run: |
