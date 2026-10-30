@@ -1,9 +1,10 @@
 apiVersion: v2
-name: kube-nipper-controller
+name: kube-nipper-console-plugin
 description: |-
-  Deploys the kube-nipper controller, which has the ability to create snapshots of either Pods that are
+  Deploys the full OpenShift kube-nipper operator, which includes both the kube-nipper contoller
+  and the console plugin.  It has the ability to create snapshots of either Pods that are
   deleted or have restarted containers, or of arbitrary Kubernetes resources with defined rules of
-  when snapshots should be taken.
+  when snapshots should be taken, all of which can be viewed in OpenShift console.
 version: 0.1.0
 
 dependencies:
