@@ -1,0 +1,12 @@
+# Kube-Nipper Controller
+
+OpenShift Operator that can create snapshots of pods is their containers are restarted or they are deleted.
+Snapshots can be viewed in the OpenShift console.
+
+## Installing on your cluster
+The following will install the controller and plugin on your cluster:
+
+[sourc,shell]
+---
+helm upgrade --install kube-nipper-operator -n kube-nipper-operator --create-namespace --set-string gnoma.gnomaDefs.VERSION=0.1.0  oci://ghcr.io/ahplos/kube-nipper-openshift/kube-nipper-console-plugin --version 0.1.0
+---
