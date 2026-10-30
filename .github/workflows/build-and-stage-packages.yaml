@@ -9,13 +9,13 @@ on:
     branches:
     - main
     paths:
-    - 'charts/**'
+    - './**'
 
   pull_request_target:
     branches:
     - main
     paths:
-    - 'charts/**'
+    - './**'
     types:
     - closed
 
