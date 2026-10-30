@@ -42,12 +42,6 @@ jobs:
         # Cache dependencies based on your lockfile
         cache: 'yarn'
 
-    - name: Enable Corepack
-      run: corepack enable
-
-    - name: Install dependencies
-      run: yarn install --immutable
-
     - name: Git Checkout Branch
       uses: actions/checkout@v7
       with:
