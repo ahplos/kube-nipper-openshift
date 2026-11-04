@@ -1,6 +1,6 @@
 # Kube-Nipper Controller
 
-OpenShift Operator that can create snapshots of pods is their containers are restarted or they are deleted.
+OpenShift Operator that can create snapshots of pods if their containers are restarted or they are deleted.
 Snapshots can be viewed in the OpenShift console.
 
 ## Installing on your cluster

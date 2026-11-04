@@ -26,19 +26,11 @@ export type Event = {
 }
 
 export type ResourceNip = K8sResourceCommon & {
-    data: {
-        events: Event[];
-        onDeleteLogs: {
-            container: string;
-            timeCollected: string;
-            logs: string;
-        }
-        onRestartLogs: {
-            container: string;
-            timeCollected: string;
-            logs: string;
-        }
+    containerLogs: string[];
+    involvedObject:  {
         spec: Record<string, unknown>;
         status: Record<string, unknown>;
     };
+    involvedObjectEvents: Event[];
+    source: string;
 };

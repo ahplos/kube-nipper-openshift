@@ -111,7 +111,8 @@ export const NipEventsListTab = (model: any, page: any, component: any) => {
         setIsChecked(checked);
     };
 
-    let events = isChecked ? tps.data.events.filter(ev => ev.reportingComponent != 'kopf') : tps.data.events
+    let events = isChecked ?
+        tps.involvedObjectEvents.filter(ev => ev.reportingComponent != 'kopf') : tps.involvedObjectEvents
 
     return (
         <>
@@ -131,7 +132,7 @@ export const NipEventsListTab = (model: any, page: any, component: any) => {
                     </Toolbar>
                     <ResourceNipEventsTable
                         data={events}
-                        unfilteredData={tps.data.events}
+                        unfilteredData={tps.involvedObjectEvents}
                         loaded={true}
                         loadError={''}
                     />

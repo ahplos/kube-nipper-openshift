@@ -52,8 +52,8 @@ const ResourceNipsTable: React.FC<ResourceNipTableProps> = ({ data, unfilteredDa
             sort: (data: K8sResourceCommon[], direction: SortByDirection) => [...data].sort((a, b) => {
                 const atps = a as ResourceNip;
                 const btps = b as ResourceNip;
-                const av = atps.data.onRestartLogs ? 1 : 0;
-                const bv = btps.data.onRestartLogs ? 1 : 0;
+                const av = atps.source == 'resourceDeleted' ? 1 : 0;
+                const bv = btps.source == 'resourceDeleted' ? 1 : 0;
                 const cmp = av - bv; // 0 = empty first, 1 = non-empty first
                 return direction === SortByDirection.asc ? cmp : -cmp;
             }),
@@ -65,8 +65,8 @@ const ResourceNipsTable: React.FC<ResourceNipTableProps> = ({ data, unfilteredDa
             sort: (data: K8sResourceCommon[], direction: SortByDirection) => [...data].sort((a, b) => {
                 const atps = a as ResourceNip;
                 const btps = b as ResourceNip;
-                const av = atps.data.onDeleteLogs ? 1 : 0;
-                const bv = btps.data.onDeleteLogs ? 1 : 0;
+                const av = atps.source == 'resourceDeleted' ? 0 : 1;
+                const bv = btps.source == 'resourceDeleted' ? 0 : 1;
                 const cmp = av - bv; // 0 = empty first, 1 = non-empty first
                 return direction === SortByDirection.asc ? cmp : -cmp;
             }),
@@ -75,7 +75,7 @@ const ResourceNipsTable: React.FC<ResourceNipTableProps> = ({ data, unfilteredDa
         {
             title: 'Phase',
             id: 'phase',
-            sort: 'data.status.phase',
+            sort: 'involvedObject.status.phase',
             transforms: [sortable],
         },
         {
@@ -84,8 +84,8 @@ const ResourceNipsTable: React.FC<ResourceNipTableProps> = ({ data, unfilteredDa
             sort: (data: K8sResourceCommon[], direction: SortByDirection) => [...data].sort((a, b) => {
                 const atps = a as ResourceNip;
                 const btps = b as ResourceNip;
-                const av = (atps.data.onRestartLogs || atps.data.status?.phase != 'Succeeded') ? 1 : 0;
-                const bv = (btps.data.onRestartLogs || btps.data.status?.phase != 'Succeeded') ? 1 : 0;
+                const av = (atps.source != 'resourceDeleted' || atps.involvedObject.status?.phase != 'Succeeded') ? 1 : 0;
+                const bv = (btps.source != 'resourceDeleted' || btps.involvedObject.status?.phase != 'Succeeded') ? 1 : 0;
                 const cmp = av - bv; // 0 = empty first, 1 = non-empty first
                 return direction === SortByDirection.asc ? cmp : -cmp;
             }),
@@ -114,16 +114,16 @@ const ResourceNipsTable: React.FC<ResourceNipTableProps> = ({ data, unfilteredDa
                     <ResourceLink groupVersionKind={NS_GVK} name={tps.metadata?.namespace} />
                 </TableData>
                 <TableData id={columns[2].id} activeColumnIDs={activeColumnIDs}>
-                    {tps.data.onRestartLogs ? 'YES' : ''}
+                    {tps.source != 'resourceDeleted' ? 'YES' : ''}
                 </TableData>
                 <TableData id={columns[3].id} activeColumnIDs={activeColumnIDs}>
-                    {tps.data.onDeleteLogs ? 'YES' : ''}
+                    {tps.source == 'resourceDeleted' ? 'YES' : ''}
                 </TableData>
                 <TableData id={columns[4].id} activeColumnIDs={activeColumnIDs}>
-                    {tps.data?.status?.phase || '-'}
+                    {tps.involvedObject?.status?.phase || '-'}
                 </TableData>
                 <TableData id={columns[5].id} activeColumnIDs={activeColumnIDs}>
-                    {(tps.data.onRestartLogs || tps.data.status?.phase != 'Succeeded') ? 'YES' : ''}
+                    {(tps.source != 'resourceDeleted' || tps.involvedObject.status?.phase != 'Succeeded') ? 'YES' : ''}
                 </TableData>
                 <TableData id={columns[6].id} activeColumnIDs={activeColumnIDs}>
                     <Timestamp timestamp={tps.metadata?.creationTimestamp || '-'} />
@@ -154,7 +154,7 @@ export const NipListPage = (model: { namespace: any; }) => {
     };
 
     let filteredTpss = isChecked ? tpss : tpss.filter(tps =>
-        tps.data.onRestartLogs || tps.data.status?.phase !== 'Succeeded'
+        tps.source != 'resourceDeleted' || tps.involvedObject.status?.phase != 'Succeeded'
     );
 
     return (
