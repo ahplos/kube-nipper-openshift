@@ -57,7 +57,7 @@ const config: WebpackConfiguration = {
   plugins: [
     new ConsoleRemotePlugin(),
   ],
-  devtool: isProd ? false : 'source-map',
+  devtool: isProd ? false : 'inline-source-map',
   optimization: {
     chunkIds: isProd ? 'deterministic' : 'named',
     minimize: isProd,

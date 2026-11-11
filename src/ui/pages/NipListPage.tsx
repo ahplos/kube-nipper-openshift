@@ -1,185 +1,205 @@
-import * as React from 'react';
-import { useState } from 'react';
+import {
+    useMemo,
+    useState
+} from 'react';
 
 import {
-    K8sResourceCommon,
-    ListPageBody,
+    Icon,
+    Switch,
+    ToolbarItem
+} from '@patternfly/react-core';
+import { SortByDirection } from '@patternfly/react-table';
+import {
+    DataView,
+    DataViewTable,
+    DataViewToolbar,
+    useDataViewSort
+} from '@patternfly/react-data-view';
+
+import {
     ListPageHeader,
     ResourceLink,
-    RowProps,
-    TableColumn,
-    TableData,
     Timestamp,
-    VirtualizedTable,
 } from '@openshift-console/dynamic-plugin-sdk';
+
+import RhUiErrorFillIcon from '@patternfly/react-icons/dist/esm/icons/rh-ui-error-fill-icon'
 
 import {
     RESOURCE_NIP_GVK,
     NS_GVK,
-    ResourceNip,
+    POD_GVK,
 } from '../utilities/objectDefs';
 
-import { sortable, SortByDirection } from '@patternfly/react-table';
-
 import NipK8sUtils from '../utilities/nipK8sUtils';
-import { Switch, Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
 
-type ResourceNipTableProps = {
-    data: K8sResourceCommon[];
-    unfilteredData: K8sResourceCommon[];
-    loaded: boolean;
-    loadError: any;
-};
-
-const ResourceNipsTable: React.FC<ResourceNipTableProps> = ({ data, unfilteredData, loaded, loadError }) => {
-
-    const columns: TableColumn<K8sResourceCommon>[] = [
-        {
-            title: 'Name',
-            id: 'name',
-            sort: 'metadata.name',
-            transforms: [sortable],
-        },
-        {
-            title: 'Namespace',
-            id: 'namespace',
-            sort: 'metadata.namespace',
-            transforms: [sortable],
-        },
-        {
-            title: 'Restarts',
-            id: 'restarts',
-            sort: (data: K8sResourceCommon[], direction: SortByDirection) => [...data].sort((a, b) => {
-                const atps = a as ResourceNip;
-                const btps = b as ResourceNip;
-                const av = atps.source == 'resourceDeleted' ? 1 : 0;
-                const bv = btps.source == 'resourceDeleted' ? 1 : 0;
-                const cmp = av - bv; // 0 = empty first, 1 = non-empty first
-                return direction === SortByDirection.asc ? cmp : -cmp;
-            }),
-            transforms: [sortable],
-        },
-        {
-            title: 'Deleted',
-            id: 'deleted',
-            sort: (data: K8sResourceCommon[], direction: SortByDirection) => [...data].sort((a, b) => {
-                const atps = a as ResourceNip;
-                const btps = b as ResourceNip;
-                const av = atps.source == 'resourceDeleted' ? 0 : 1;
-                const bv = btps.source == 'resourceDeleted' ? 0 : 1;
-                const cmp = av - bv; // 0 = empty first, 1 = non-empty first
-                return direction === SortByDirection.asc ? cmp : -cmp;
-            }),
-            transforms: [sortable],
-        },
-        {
-            title: 'Phase',
-            id: 'phase',
-            sort: 'involvedObject.status.phase',
-            transforms: [sortable],
-        },
-        {
-            title: 'Error',
-            id: 'error',
-            sort: (data: K8sResourceCommon[], direction: SortByDirection) => [...data].sort((a, b) => {
-                const atps = a as ResourceNip;
-                const btps = b as ResourceNip;
-                const av = (atps.source != 'resourceDeleted' || atps.involvedObject.status?.phase != 'Succeeded') ? 1 : 0;
-                const bv = (btps.source != 'resourceDeleted' || btps.involvedObject.status?.phase != 'Succeeded') ? 1 : 0;
-                const cmp = av - bv; // 0 = empty first, 1 = non-empty first
-                return direction === SortByDirection.asc ? cmp : -cmp;
-            }),
-            transforms: [sortable],
-        },
-        {
-            title: 'Created',
-            id: 'created',
-            sort: 'metadata.creationTimestamp',
-            transforms: [sortable],
-        },
-    ];
-
-    const ResourceNipRow: React.FC<RowProps<K8sResourceCommon>> = ({ obj, activeColumnIDs }) => {
-        const tps: ResourceNip = obj as ResourceNip;
-
-        return (
-            <>
-                <TableData id={columns[0].id} activeColumnIDs={activeColumnIDs}>
-                    <ResourceLink groupVersionKind={RESOURCE_NIP_GVK}
-                                  name={tps.metadata?.name}
-                                  namespace={tps.metadata?.namespace}>
-                    </ResourceLink>
-                </TableData>
-                <TableData id={columns[1].id} activeColumnIDs={activeColumnIDs}>
-                    <ResourceLink groupVersionKind={NS_GVK} name={tps.metadata?.namespace} />
-                </TableData>
-                <TableData id={columns[2].id} activeColumnIDs={activeColumnIDs}>
-                    {tps.source != 'resourceDeleted' ? 'YES' : ''}
-                </TableData>
-                <TableData id={columns[3].id} activeColumnIDs={activeColumnIDs}>
-                    {tps.source == 'resourceDeleted' ? 'YES' : ''}
-                </TableData>
-                <TableData id={columns[4].id} activeColumnIDs={activeColumnIDs}>
-                    {tps.involvedObject?.status?.phase || '-'}
-                </TableData>
-                <TableData id={columns[5].id} activeColumnIDs={activeColumnIDs}>
-                    {(tps.source != 'resourceDeleted' || tps.involvedObject.status?.phase != 'Succeeded') ? 'YES' : ''}
-                </TableData>
-                <TableData id={columns[6].id} activeColumnIDs={activeColumnIDs}>
-                    <Timestamp timestamp={tps.metadata?.creationTimestamp || '-'} />
-                </TableData>
-            </>
-        );
-    };
-
-    return (
-        <VirtualizedTable<K8sResourceCommon>
-            data={data}
-            unfilteredData={unfilteredData}
-            loaded={loaded}
-            loadError={loadError}
-            columns={columns}
-            Row={ResourceNipRow}
-        />
-    );
-}
+const NAME_KEY = 'name';
+const NAMESPACE_KEY = 'namespace';
+const INVOLVED_OBJECT_KEY = 'involvedObject';
+const SOURCE_KEY = 'source';
+const HAS_ERROR_KEY = 'hasError';
+const CREATED_KEY = 'created';
 
 export const NipListPage = (model: { namespace: any; }) => {
 
+    const makeSortProps = (key: string, columnIndex: number) => ({
+        sortBy: {
+            index: columnIndex,
+            direction: sortBy === key ? direction : undefined
+        },
+        onSort: (
+            _event: React.MouseEvent,
+            _columnIndex: number,
+            direction: SortByDirection
+        ) => {
+            onSort(_event, key, direction);
+        },
+        columnIndex,
+    });
+
+    const [nips, _, __] = NipK8sUtils.getResourceNips({namespace: model.namespace});
+
     const [isChecked, setIsChecked] = useState<boolean>(false);
-    const [tpss, loaded, loadError] = NipK8sUtils.getResourceNips({namespace: model.namespace});
+    const filteredNips = isChecked ? nips : nips.filter(nip =>
+        nip.source != 'resourceDeleted' || nip.involvedObject.status?.phase != 'Succeeded'
+    );
 
     const handleChange = (_event: React.FormEvent<HTMLInputElement>, checked: boolean) => {
         setIsChecked(checked);
     };
 
-    let filteredTpss = isChecked ? tpss : tpss.filter(tps =>
-        tps.source != 'resourceDeleted' || tps.involvedObject.status?.phase != 'Succeeded'
-    );
+    const { sortBy, direction, onSort } = useDataViewSort({
+        initialSort: {
+            sortBy: 'name',
+            direction: 'asc',
+        },
+    });
+
+    const columns = [
+        {
+            cell: 'Name',
+            props: {
+                sort: makeSortProps(NAME_KEY, 0),
+                isStickyColumn: true
+            },
+        },
+        {
+            cell: 'Namespace',
+            props: {
+                sort: makeSortProps(NAMESPACE_KEY, 1),
+            },
+        },
+        {
+            cell: 'Involved Object',
+            props: {
+                sort: makeSortProps(INVOLVED_OBJECT_KEY, 2),
+            },
+        },
+        {
+            cell: 'Source',
+            props: {
+                sort: makeSortProps(SOURCE_KEY, 3),
+            },
+        },
+        {
+            cell: 'Has Error',
+            props: {
+                sort: makeSortProps(HAS_ERROR_KEY, 4),
+            },
+        },
+        {
+            cell: 'Created',
+            props: {
+                sort: makeSortProps(CREATED_KEY, 5),
+            },
+        },
+    ];
+
+    const sortedData = useMemo(() => {
+        const sorted = [...filteredNips];
+
+        sorted.sort((a, b) => {
+            let aVal = '';
+            let bVal = '';
+
+            switch(sortBy) {
+                case NAME_KEY:
+                    aVal = a.metadata?.name || ''
+                    bVal = b.metadata?.name || ''
+                    break;
+                case NAMESPACE_KEY:
+                    aVal = a.metadata?.namespace || ''
+                    bVal = b.metadata?.namespace || ''
+                    break;
+                case INVOLVED_OBJECT_KEY:
+                    aVal = a.involvedObject.metadata.namespace + ' ' + a.involvedObject.metadata.name
+                    bVal = b.involvedObject.metadata.namespace + ' ' + b.involvedObject.metadata.name
+                    break;
+                case SOURCE_KEY:
+                    aVal = a.source
+                    bVal = b.source
+                    break;
+                case HAS_ERROR_KEY:
+                    aVal = (a.source != 'resourceDeleted' || a.involvedObject.status?.phase != 'Succeeded') ? '1' : '0'
+                    bVal = (b.source != 'resourceDeleted' || b.involvedObject.status?.phase != 'Succeeded') ? '1' : '0'
+                    break;
+                case CREATED_KEY:
+                    aVal = a.metadata?.creationTimestamp || ''
+                    bVal = b.metadata?.creationTimestamp || ''
+                break;
+            }
+
+            const cmp = aVal.localeCompare(bVal, undefined, { numeric: true, sensitivity: 'base' });
+            return direction === 'asc' ? cmp : -cmp;
+        });
+
+        return sorted;
+    }, [filteredNips, sortBy, direction]);
+
+    const rows = sortedData.map((nip) => ({
+        id: nip.metadata?.uid,
+        row: [
+            {
+                cell: <ResourceLink groupVersionKind={RESOURCE_NIP_GVK}
+                                    name={nip.metadata?.name}
+                                    namespace={nip.metadata?.namespace}/>,
+                props: {
+                    hasRightBorder: true,
+                    isStickyColumn: true
+                }
+            },
+            <ResourceLink groupVersionKind={NS_GVK}
+                          name={nip.metadata?.namespace}/>,
+            <ResourceLink groupVersionKind={POD_GVK}
+                          name={nip.involvedObject.metadata.name as string}
+                          namespace={nip.involvedObject.metadata.namespace as string}/>,
+            nip.source,
+            (nip.involvedObject.status?.phase && nip.involvedObject.status.phase != 'Succeeded') &&
+                <Icon status="danger"><RhUiErrorFillIcon/></Icon>,
+            <Timestamp timestamp={nip.metadata?.creationTimestamp || '-'} />
+        ]
+    }));
 
     return (
         <>
             <ListPageHeader title={'Ahplos ResourceNips'}/>
-            <ListPageBody>
-                <Toolbar inset={{ default: 'insetLg' }} hasNoPadding>
-                    <ToolbarContent>
-                        <ToolbarItem align={{ default: 'alignEnd' }}>
-                            <Switch
-                                id="show-nominal"
-                                label="Show Nominal"
-                                isChecked={isChecked}
-                                onChange={handleChange}
-                            />
-                        </ToolbarItem>
-                    </ToolbarContent>
-                </Toolbar>
-                <ResourceNipsTable
-                    data={filteredTpss}
-                    unfilteredData={tpss}
-                    loaded={loaded}
-                    loadError={loadError}
+            <DataView>
+                <DataViewToolbar>
+                    <ToolbarItem align={{ default: 'alignEnd' }}>
+                        <Switch
+                            id="show-nominal"
+                            label="Show Nominal"
+                            isChecked={isChecked}
+                            onChange={handleChange}
+                        />
+                    </ToolbarItem>
+                </DataViewToolbar>
+                <DataViewTable
+                    aria-label="Resource Nips"
+                    columns={columns}
+                    rows={rows}
+                    isSticky
                 />
-            </ListPageBody>
+            </DataView>
         </>
     );
 };

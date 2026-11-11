@@ -27,8 +27,24 @@
     "type": "console.tab/horizontalNav",
     "properties": {
       "page": {
+        "name": "Logs",
+        "href": "nip-logs"
+      },
+      "model": {
+        "group": "nipper.ahplos.org",
+        "version": "v1beta1",
+        "kind": "ResourceNip"
+      },
+      "component": { "$codeRef": "nipUiComponents.NipLogsTab" },
+      "insertBefore": "plugin:kube-nipper-openshift/nip-events"
+    }
+  },
+  {
+    "type": "console.tab/horizontalNav",
+    "properties": {
+      "page": {
         "name": "Events",
-        "href": "tps-events"
+        "href": "nip-events"
       },
       "model": {
         "group": "nipper.ahplos.org",

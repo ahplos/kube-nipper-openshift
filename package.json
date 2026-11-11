@@ -6,7 +6,7 @@
   "license": "LGPL-2.1-or-later",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ahplos/NIP.git"
+    "url": "https://github.com/ahplos/kube-nipper-openshift.git"
   },
   "scripts": {
     "clean": "rm -rf dist",
@@ -28,9 +28,9 @@
     "@openshift-console/dynamic-plugin-sdk": "4.19-latest",
     "@openshift-console/dynamic-plugin-sdk-webpack": "4.19-latest",
     "@patternfly/react-core": "^6.2.2",
+    "@patternfly/react-data-view": "^6.7.0",
     "@patternfly/react-icons": "^6.2.2",
     "@patternfly/react-log-viewer": "^6.5.0",
-    "@patternfly/react-table": "^6.2.2",
     "@types/node": "^22.0.0",
     "@types/react": "^17.0.37",
     "@types/react-router-dom": "^5.3.3",

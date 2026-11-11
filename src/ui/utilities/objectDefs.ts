@@ -11,6 +11,11 @@ export const NS_GVK: K8sGroupVersionKind = {
     version: "v1"
 };
 
+export const POD_GVK: K8sGroupVersionKind = {
+    kind: "Pod",
+    version: "v1"
+};
+
 export const RESOURCE_NIP_GVK: K8sGroupVersionKind = {
     group: NIPPER_AHPLOS_ORG,
     version: API_VERSION,
@@ -26,8 +31,13 @@ export type Event = {
 }
 
 export type ResourceNip = K8sResourceCommon & {
-    containerLogs: string[];
+    containerLogs: {
+        name: string;
+        init: boolean;
+        logs: string
+    }[];
     involvedObject:  {
+        metadata: Record<string, unknown>;
         spec: Record<string, unknown>;
         status: Record<string, unknown>;
     };
