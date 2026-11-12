@@ -2,17 +2,23 @@ import {
     useMemo,
     useState
 } from 'react';
+import { useSearchParams } from 'react-router-dom-v5-compat';
 
 import {
     Icon,
+    Pagination,
     Switch,
     ToolbarItem
 } from '@patternfly/react-core';
 import { SortByDirection } from '@patternfly/react-table';
 import {
     DataView,
+    DataViewFilters,
     DataViewTable,
+    DataViewTextFilter,
     DataViewToolbar,
+    useDataViewFilters,
+    useDataViewPagination,
     useDataViewSort
 } from '@patternfly/react-data-view';
 
@@ -41,27 +47,45 @@ const CREATED_KEY = 'created';
 
 export const NipListPage = (model: { namespace: any; }) => {
 
-    const makeSortProps = (key: string, columnIndex: number) => ({
+    const makeSortProps = (columnName: string, columnIndex: number) => ({
         sortBy: {
             index: columnIndex,
-            direction: sortBy === key ? direction : undefined
+            direction: sortBy === columnName ? direction : undefined
         },
         onSort: (
             _event: React.MouseEvent,
             _columnIndex: number,
             direction: SortByDirection
-        ) => {
-            onSort(_event, key, direction);
-        },
+        ) => { onSort(_event, columnName, direction); },
         columnIndex,
     });
 
     const [nips, _, __] = NipK8sUtils.getResourceNips({namespace: model.namespace});
+    interface NipFilter {
+        name: string;
+        source: string;
+    }
+    const [ searchParams, setSearchParams ] = useSearchParams();
+    const { filters, onSetFilters } = useDataViewFilters<NipFilter>({
+        initialFilters: { name: '', source: '' },
+        searchParams,
+        setSearchParams,
+    });
 
     const [isChecked, setIsChecked] = useState<boolean>(false);
-    const filteredNips = isChecked ? nips : nips.filter(nip =>
+    const nominalOrAllNips = isChecked ? nips : nips.filter(nip =>
         nip.source != 'resourceDeleted' || nip.involvedObject.status?.phase != 'Succeeded'
     );
+
+    const filteredNips = useMemo(() => nominalOrAllNips.filter((item) => {
+            const nipName = item.metadata?.name ?? '';
+            const nipSource = item.source ?? '';
+            return (!filters.name || nipName.toLowerCase().includes(filters.name.toLowerCase())) &&
+                   (!filters.source || nipSource.toLowerCase().includes(filters.source.toLowerCase()));
+        }),
+        [nominalOrAllNips, filters.name],
+    );
+
 
     const handleChange = (_event: React.FormEvent<HTMLInputElement>, checked: boolean) => {
         setIsChecked(checked);
@@ -155,7 +179,11 @@ export const NipListPage = (model: { namespace: any; }) => {
         return sorted;
     }, [filteredNips, sortBy, direction]);
 
-    const rows = sortedData.map((nip) => ({
+
+    const pagination = useDataViewPagination({ perPage: 10 });
+    const { page, perPage } = pagination;
+
+    const rows = sortedData.slice((page - 1) * perPage, page * perPage).map((nip) => ({
         id: nip.metadata?.uid,
         row: [
             {
@@ -183,7 +211,14 @@ export const NipListPage = (model: { namespace: any; }) => {
         <>
             <ListPageHeader title={'Ahplos ResourceNips'}/>
             <DataView>
-                <DataViewToolbar>
+                <DataViewToolbar
+                    filters= {
+                        <DataViewFilters values={filters} onChange={(_e, values) => onSetFilters(values)}>
+                            <DataViewTextFilter filterId="name" title="Name" placeholder="ResourceNip name"/>
+                            <DataViewTextFilter filterId="source" title="Source" placeholder="ResourceNip source"/>
+                        </DataViewFilters>
+                    }
+                >
                     <ToolbarItem align={{ default: 'alignEnd' }}>
                         <Switch
                             id="show-nominal"
@@ -199,6 +234,7 @@ export const NipListPage = (model: { namespace: any; }) => {
                     rows={rows}
                     isSticky
                 />
+                <DataViewToolbar pagination={<Pagination itemCount={filteredNips.length} {...pagination} />} />
             </DataView>
         </>
     );

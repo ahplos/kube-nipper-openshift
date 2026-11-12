@@ -35,8 +35,7 @@
         "version": "v1beta1",
         "kind": "ResourceNip"
       },
-      "component": { "$codeRef": "nipUiComponents.NipLogsTab" },
-      "insertBefore": "plugin:kube-nipper-openshift/nip-events"
+      "component": { "$codeRef": "nipUiComponents.NipLogsTab" }
     }
   },
   {

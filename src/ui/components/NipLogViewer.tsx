@@ -5,6 +5,9 @@ import {
     Divider,
     Flex,
     FlexItem,
+    FormSelect,
+    FormSelectOption,
+    FormSelectOptionGroup,
     Switch,
     TextInput,
 } from '@patternfly/react-core';
@@ -29,6 +32,8 @@ interface ResourceNipProps {
 export const NipLogViewer = ( model : ResourceNipProps) => {
     const nip = model.nip;
 
+    const [containerName, setContainerName] = React.useState(nip.containerLogs[0]?.name);
+
     const [isLinesWrapped, setLinesWrapped] = React.useState<boolean>(true);
     const [isShowLineNumbers, setShowLineNumbers] = React.useState<boolean>(true);
     const [isFullScreen, setFullScreen] = React.useState<boolean>(false);
@@ -48,9 +53,41 @@ export const NipLogViewer = ( model : ResourceNipProps) => {
         isFullScreen ? document.exitFullscreen() : element?.requestFullscreen();
     }
 
+    const containerNameSelected = (_event: React.FormEvent<HTMLSelectElement>, value: string) => {
+        setContainerName(value);
+    };
+
+    const contGroups = [
+        {
+            groupLabel: 'Containers',
+            options: nip.containerLogs.filter((c: any) => !c.init).map((c: any): string => {
+                return c.name
+            })
+        },
+        {
+            groupLabel: 'Init Containers',
+            options: nip.containerLogs.filter((c: any) => c.init).map((c: any): string => {
+                return c.name
+            })
+        }
+    ];
+
     const LogToolbar = () => {
         return (
             <Flex columnGap={{ default: 'columnGapMd' }}>
+                <FlexItem>
+                    <FormSelect value={containerName}
+                                onChange={containerNameSelected}
+                                aria-label="Container Select">
+                        {contGroups.filter((cGroup, index) => cGroup.options.length > 0).map((cGroup, index) => (
+                            <FormSelectOptionGroup key={index} label={cGroup.groupLabel}>
+                            {cGroup.options.map((option, i) => (
+                                <FormSelectOption key={i} value={option} label={option} />
+                            ))}
+                            </FormSelectOptionGroup>
+                        ))}
+                    </FormSelect>
+                </FlexItem>
                 <FlexItem>
                     <LogViewerSearch minSearchChars={3} placeholder='Search term'/>
                 </FlexItem>
